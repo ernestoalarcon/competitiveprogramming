@@ -1,3 +1,5 @@
+# Solution for https://www.hackerrank.com/challenges/reduced-string
+
 import sys
 
 def reduce_string (value):
