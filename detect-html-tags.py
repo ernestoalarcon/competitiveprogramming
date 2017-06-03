@@ -1,21 +1,20 @@
+#!/bin/python
+# Solution for https://www.hackerrank.com/challenges/detect-html-tags
+
 import re
 
-#n = int(input().strip())
-
-def get_tags(fragment):
-    tags = set()
-    for rem in re.finditer(r'<\s*([a-zA-Z]+).*(/\s*>|>.*<\s*/\s*\1\s*>)', fragment):
-        tags.update(rem.groups())
+def get_tags(s):
+    tag_pattern = r'<\s*([a-zA-Z]\w*)\s*?(?:\s+[a-zA-Z]\w*\s*=\s*".*?"\s*)*/?\s*>'
+    
+    tags = []
+    for m in re.finditer(tag_pattern, s):
+        ag = m.groups()
+        tags.append(m.group(1))
     return tags
 
-test = '<   p > H ol a< /  p><a href="123">123 </a><div /><br />'
-tags = get_tags(test)
-print(tags)
-exit()
-
-tags = set()
+n = int(raw_input().strip())
+tags = []
 for i in range(n):
-    fragment = input().strip()
-    tags.update(get_tags(fragment))
-
-print(';'.join(sorted(list(tags))))
+    s = raw_input().strip()
+    tags.extend(get_tags(s))
+print ';'.join(sorted(set(tags)))

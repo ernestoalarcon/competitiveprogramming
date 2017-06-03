@@ -1,23 +1,31 @@
+#!/bin/python
+# Solution for https://www.hackerrank.com/challenges/ip-address-validation
+
 import re
 
-def is_ipv4(value):
-    rem = re.match(r'\b((25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(25[0-5]|2[0-4]\d|[01]?\d?\d)\b', value)
-    if rem:
+def is_ipv4(val):
+    v4_pattern = r'\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b'
+    match = re.search(v4_pattern, val)
+    if match:
+        for v in (int(x) for x in match.groups()):
+            if not (0 <= v <= 255):
+                return False
+        return True
+    return False
+    
+def is_ipv6(val):
+    v6_pattern = r'\b([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4}):([0-9abcdef]{1,4})\b'
+    match = re.search(v6_pattern, val)
+    if match:
         return True
     return False
 
-def is_ipv6(value):
-    rem = re.match(r'^[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}:[0-9a-f]{1,4}$', value)
-    if rem:
-        return True
-    return False
-
-n = int(input().strip())
+n = int(raw_input().strip())
 for i in range(n):
-    line = input().strip()
-    if is_ipv4(line):
-        print ('IPv4')
-    elif is_ipv6(line):
-        print ('IPv6')
+    v = raw_input().strip()
+    if is_ipv4(v):
+        print 'IPv4'
+    elif is_ipv6(v):
+        print 'IPv6'
     else:
-        print ('Neither')
+        print 'Neither'
