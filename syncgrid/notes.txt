@@ -1,0 +1,63 @@
+## ¿Cómo Funciona el Flujo Completo?
+
+1. Inicio: El GridComponent se monta, crea una instancia de DataStore y comienza a "escuchar" su async generator.
+
+2. Suscripción: El useEffect llama a dataStore.startSubscription(), que abre la conexión GraphQL.
+
+3. Llegan Datos: La suscripción de GraphQL envía un nuevo dato. El DataStore lo añade a incomingUpdatesQueue y activa un setTimeout de 300ms. Más datos pueden llegar y simplemente se añadirán a la cola.
+
+4. Edición del Usuario: Mientras tanto, un usuario edita la fila con id: "123". onCellValueChanged se dispara y llama a dataStore.handleUserEdit("123", ...). El DataStore actualiza la fila en su Map interno, la marca con _isDirty: true, y cede inmediatamente el nuevo conjunto de datos. El GridComponent recibe estos datos y se actualiza, mostrando el cambio del usuario al instante.
+
+5. Procesamiento del Lote: Pasan los 300ms. processBatch se ejecuta.
+
+Toma la actualización del servidor para la fila "123".
+
+Ve que data.get("123")._isDirty es true.
+
+En lugar de aplicar el cambio, establece _isStale: true en esa fila.
+
+Procesa otras actualizaciones para filas no editadas normalmente.
+
+6. Actualización Final del Lote: Al final de processBatch, el DataStore cede el conjunto de datos fusionado. El GridComponent se actualiza. Ahora la fila "123" muestra los datos del usuario, pero con un fondo rojo y un texto de estado "⚠️ Desactualizado", informándole del conflicto.
+
+
+Con esta arquitectura, logras todos tus objetivos: el rendimiento es excelente gracias al batching y a las transacciones de AgGrid, y los cambios del usuario están protegidos contra las actualizaciones del servidor, resolviendo la condición de carrera de manera segura y transparente.
+
+
+
+----------------------------------------------------------------------------------------------
+
+
+## Diferencia Clave: Transacción vs. Refresco de Filas
+
+1. Refresco de Filas (lo que hacía setRowData(data)):
+
+Cuando pasas un array completamente nuevo a la prop rowData, AgGrid realiza un proceso de comparación.
+
+Utiliza la función getRowId para comparar el array nuevo con el que tenía antes y así determinar qué filas son nuevas, cuáles fueron eliminadas y cuáles permanecen.
+
+Para las filas que permanecen, comprueba si sus datos han cambiado y, si es así, las vuelve a renderizar.
+
+Aunque es mucho más eficiente que no usar getRowId, este proceso de comparación ("diffing") para cada lote de datos sigue siendo computacionalmente más costoso que una transacción. Es un modelo en el que AgGrid tiene que "descubrir" los cambios.
+
+2. Transacción (el enfoque más eficiente):
+
+Con una transacción, tú le dices explícitamente a AgGrid qué ha cambiado usando gridApi.applyTransaction() o gridApi.applyTransactionAsync().
+
+Le proporcionas listas separadas de filas para add, update y remove.
+
+AgGrid no tiene que adivinar ni comparar. Simplemente ejecuta las operaciones que le pides. Este es el método más directo, quirúrgico y de mayor rendimiento para actualizar datos.
+
+Aunque el DataStore que creamos ya hacía el trabajo más pesado al procesar por lotes, podemos dar un paso más para que la comunicación final con AgGrid sea lo más eficiente posible, cambiando de un "Refresco de Filas" a "Transacciones".
+
+
+--------------------------------------------------------------------------------------------------
+
+
+## Resumen de las Mejoras
+1. Máximo Rendimiento: Ahora estamos utilizando el método de actualización más rápido que AgGrid ofrece. El DataStore hace el trabajo pesado de agrupar y determinar los cambios, y luego le entrega a AgGrid una "receta" precisa de qué hacer a través de applyTransactionAsync.
+
+2. Fuente Única de Verdad Robusta: El DataStore sigue siendo la fuente de verdad. El componente de React se vuelve aún más "tonto", ya que ni siquiera gestiona el estado de los datos después de la carga inicial; simplemente pasa las instrucciones de la store a la API de AgGrid.
+
+3. Mejores Prácticas de AgGrid: Este patrón se alinea perfectamente con las recomendaciones oficiales de AgGrid para aplicaciones de alto rendimiento y streaming de datos.
+

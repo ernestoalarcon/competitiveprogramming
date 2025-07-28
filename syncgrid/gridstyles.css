@@ -1,0 +1,9 @@
+/* src/components/GridStyles.css */
+
+.cell-stale {
+  background-color: #ffcdd2 !important; /* Un rojo claro para indicar "peligro" o "atención" */
+}
+
+.cell-dirty {
+  background-color: #fff9c4 !important; /* Un amarillo claro para indicar "en progreso" */
+}
